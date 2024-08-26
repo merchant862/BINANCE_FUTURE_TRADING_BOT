@@ -17,18 +17,18 @@ async function getAccountBalance()
 
         
         const response = await axios.get(url, { headers });
-        console.log(response.data);
+        return response.data
     }
 
     catch (error) 
     {
-        console.error('Error fetching balance:', error.response ? error.response.data : error.message);
+        throw error;
     }
 }
 
-(async() => 
+/* (async() => 
 {
     await getAccountBalance()
 })()
-
+ */
 module.exports = getAccountBalance;

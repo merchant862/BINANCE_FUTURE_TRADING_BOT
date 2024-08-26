@@ -2,18 +2,18 @@ const axios = require('axios');
 
 const binanceConfig = require('./../config');
 
-async function klineData(symbol, interval, limit) 
+async function klineData(data) 
 {
     try 
     {
         const url = `${binanceConfig.REST_BASE_URL}/fapi/v1/klines?
-        symbol=${symbol}&
-        interval=${interval}&
-        limit=${limit}`;
+        symbol=${data.symbol}&
+        interval=${data.interval}&
+        limit=${data.limit}`;
         
         const response = await axios.get(url);
         
-        const data = response.data.map(candle => (
+        const candles = response.data.map(candle => (
         {
             openTime                 : candle[0],
             open                     : candle[1],
@@ -29,18 +29,25 @@ async function klineData(symbol, interval, limit)
             ignore                   : candle[11],
         }));
         
-        return data;
+        return candles;
     }
 
     catch (error) 
     {
-        console.error('Error fetching historical data:', error.response ? error.response.data : error.message);
+        throw error;
     }
 }
-/* 
-(async() => 
+
+/* (async() => 
 {
-    console.log(await klineData('btcusdt','5m',3));
+    let data = 
+    {
+        symbol: 'btcusdt',
+        interval: '5m',
+        limit: 3,
+    }
+
+    console.log(await klineData(data));
 })() */
 
 module.exports = klineData;

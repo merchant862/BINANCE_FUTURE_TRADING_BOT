@@ -1,17 +1,13 @@
 const { BollingerBands } = require('technicalindicators');
 
-const klineData = require('./SDKs/BINANCE/marketData/klineData');
-
-async function calculateBollingerBands(callback) 
+async function calculateBollingerBands(prices) 
 {
-  //const historicalData = await klineData(symbol, '1m', 30);
-  
-  const closePrices = (callback).map(candle => parseFloat(candle.close)).filter(price => !isNaN(price));
+  //closePrices = (callback).map(candle => parseFloat(candle.close)).filter(price => !isNaN(price));
   
   const input = 
   {
     period: 20,
-    values: closePrices,
+    values: prices,
     stdDev: 2, 
   };
 
@@ -21,8 +17,4 @@ async function calculateBollingerBands(callback)
   else return bbands;
 }
 
-(async() => 
-{
-    let BB = await calculateBollingerBands(await klineData('solusdt', '1m', 15));
-    console.log(BB)
-})();
+module.exports = calculateBollingerBands;

@@ -3,18 +3,10 @@ const axios = require('axios');
 const createSignature = require('./../../../createHMACSignature');
 const binanceConfig   = require('./../config');
 
-async function setLeverage(symbol, leverage = 1) 
+async function setLeverage(data) 
 {
     try
     {
-        const data = 
-        {
-            symbol: symbol,
-            leverage: leverage,
-            //recvWindow: 5000,
-            timestamp: Date.now(),
-        };
-
         const headers = { 'X-MBX-APIKEY': binanceConfig.API_KEY };
     
         const queryString = new URLSearchParams(data).toString();
@@ -23,13 +15,26 @@ async function setLeverage(symbol, leverage = 1)
     
         
         const response = await axios.post(url, null, { headers });
-        console.log(`Leverage set to ${leverage}x for ${symbol}:`, response.data);
+        return response.data;
     }
     
     catch (error) 
     {
-      console.error('Error setting leverage:', error.response ? error.response.data : error.message);
+        throw error;
     }
 }
+
+/* (async() => 
+{
+    const data = 
+    {
+        symbol: 'btcusdt',
+        leverage: 0,
+        //recvWindow: 5000,
+        timestamp: Date.now(),
+    };
+
+    console.log(await setLeverage(data));
+})() */
 
 module.exports = setLeverage;
