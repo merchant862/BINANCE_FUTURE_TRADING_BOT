@@ -1,20 +1,28 @@
 const { BollingerBands } = require('technicalindicators');
 
-async function calculateBollingerBands(prices) 
+async function calculateBollingerBands(data) 
 {
-  //closePrices = (callback).map(candle => parseFloat(candle.close)).filter(price => !isNaN(price));
-  
-  const input = 
+  try
   {
-    period: 20,
-    values: prices,
-    stdDev: 2, 
-  };
-
-  const bbands = BollingerBands.calculate(input);
+    //closePrices = (callback).map(candle => parseFloat(candle.close)).filter(price => !isNaN(price));
   
-  if (bbands.length === 0) return 'Not enough data points to calculate Bollinger Bands';
-  else return bbands;
+    const input = 
+    {
+      values: data.prices,
+      period: data.period,
+      stdDev: data.stdDev, 
+    };
+
+    const bbands = BollingerBands.calculate(input);
+    
+    if (bbands.length === 0) return 'Not enough data points to calculate Bollinger Bands';
+    else return bbands;
+  }
+
+  catch(error)
+  {
+    throw error;
+  }
 }
 
 module.exports = calculateBollingerBands;

@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const createSignature = require('./../../../createHMACSignature');
+const createSignature = require('./../createHMACSignature');
 const binanceConfig   = require('./../config');
 
 const setLeverage     = require('./setLeverage');
