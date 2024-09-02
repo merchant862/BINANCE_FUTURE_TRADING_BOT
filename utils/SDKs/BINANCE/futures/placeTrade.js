@@ -3,14 +3,10 @@ const axios = require('axios');
 const createSignature = require('./../createHMACSignature');
 const binanceConfig   = require('./../config');
 
-const setLeverage     = require('./setLeverage');
-
 async function placeFuturesOrder(data) 
 {
     try
     {
-        //await setLeverage(data.symbol, data.leverage);
-  
         const headers = { 'X-MBX-APIKEY': binanceConfig.API_KEY };
     
         const queryString = new URLSearchParams(data).toString();
@@ -32,7 +28,7 @@ async function placeFuturesOrder(data)
     const data = 
     {
         leverage: 20,
-        symbol: 'btcusdt',
+        symbol: 'BTCUSDT',
         side: 'BUY',
         type: 'MARKET', 
         quantity: 1,

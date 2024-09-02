@@ -17,6 +17,7 @@ async function getAccountBalance()
 
         
         const response = await axios.get(url, { headers });
+        
         return response.data
     }
 
@@ -29,6 +30,6 @@ async function getAccountBalance()
 /* (async() => 
 {
     await getAccountBalance()
-})()
- */
+})() */
+
 module.exports = getAccountBalance;

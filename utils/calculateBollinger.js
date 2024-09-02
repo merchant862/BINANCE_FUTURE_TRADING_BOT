@@ -15,8 +15,7 @@ async function calculateBollingerBands(data)
 
     const bbands = BollingerBands.calculate(input);
     
-    if (bbands.length === 0) return 'Not enough data points to calculate Bollinger Bands';
-    else return bbands;
+    return bbands;
   }
 
   catch(error)

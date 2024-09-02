@@ -1,30 +1,99 @@
+const schedule = require('node-schedule');
+const { exec } = require('child_process');
 
-const crypto = require('crypto');
+const EventEmitter = require('events');
+const eventEmitter = new EventEmitter();
 
-async function getAccountBalance() 
+const fifteenMinChartMonitoringInEveryThreeMinutes = require('./trading_strategies/bollinger/fifteenMinChartMonitoringInEveryThreeMinutes');
+const binanceConfig = require('./utils/SDKs/BINANCE/sdk');
+
+eventEmitter.on('rerun', async() => 
 {
-  const data = 
-  {
-    timestamp: Date.now(),
-  };
+    setTimeout((async() => 
+    {
+        await tradingBot()
+    }), 180)
+});
 
-  const queryString = new URLSearchParams(data).toString();
-  const signature = createSignature(queryString);
-  const url = `${BASE_URL}/fapi/v2/balance?${queryString}&signature=${signature}`;
+const tradingBot = async () => 
+{
+    try
+    {
+        let moniterMarket = await fifteenMinChartMonitoringInEveryThreeMinutes(
+        {
+            symbol: 'BTCUSDT',
+            interval: '15m',
+            klineLimit: 100,
+            period: 20,
+            stdDev: 2
+        });
+    
+        if(!moniterMarket || moniterMarket == false) 
+        {
+            console.log('No buying opportunity!\n Re-running thr bot!');
+            eventEmitter.emit('rerun');
+        }
 
-  try 
-  {
-    const response = await axios.get(url, { headers });
-    console.log(response.data);
-  } 
-  
-  catch (error) 
-  {
-    console.error('Error fetching balance:', error.response ? error.response.data : error.message);
-  }
+        else
+        {
+            await binanceConfig.setLeverage(
+            {
+                symbol: 'BTCUSDT',
+                leverage: 20,
+                timestamp: Date.now(),
+            });
+            
+            let userBalance = await binanceConfig.getBalance();
+            let userUSDTBalance = userBalance.find(item => item.asset === 'BTC');
+
+            if(!userUSDTBalance.availableBalance || userUSDTBalance.availableBalance == 0 || userUSDTBalance.availableBalance == '0.00000000')
+            {
+                console.log('Not enough balance!\n Re-running thr bot!');
+                eventEmitter.emit('rerun');
+            }
+ 
+            else
+            {
+                let coinPrice = await binanceConfig.marketPriceOfACoin({ symbol: 'BTCUSDT' });
+                let quantitytoSpend = parseFloat(((parseFloat(userUSDTBalance.availableBalance) / 100) * 1) / parseFloat(coinPrice)).toFixed(2);
+                
+                let placetrade = await binanceConfig.placeTrade(
+                {
+                    symbol: 'BTCUSDT',
+                    side: 'BUY',
+                    positionSide: 'LONG',
+                    type: 'MARKET', 
+                    quantity: quantitytoSpend,
+                    recvWindow: '20000',
+                    timestamp: Date.now(),
+                });
+
+                console.log(placetrade)
+            }
+        }
+    }
+
+    catch(error)
+    {
+        console.error(`${error}\n Re-running thr bot!`);
+        eventEmitter.emit('rerun');
+    }
+};
+
+try
+{
+    let SCRIPT = async() => 
+    {
+        //setInterval(scrap, CONFIG.lander_to_lander_delay);
+        await tradingBot();
+    }
+
+    SCRIPT();
 }
 
-// Example usage:
-(async () => {
-  await getAccountBalance();
-})();
+catch(error)
+{
+    console.error(error);
+}
+
+module.exports = tradingBot;
