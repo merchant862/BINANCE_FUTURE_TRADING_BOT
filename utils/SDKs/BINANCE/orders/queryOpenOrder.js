@@ -3,7 +3,7 @@ const axios = require('axios');
 const createSignature = require('./../createHMACSignature');
 const binanceConfig   = require('./../config');
 
-async function listMarketTrades(data) 
+async function queryOpenOrder(data) 
 {
     try 
     {
@@ -11,7 +11,7 @@ async function listMarketTrades(data)
 
         const queryString = new URLSearchParams(data).toString();
         const signature = createSignature(binanceConfig.API_SECRET, queryString);
-        const url = `${binanceConfig.REST_BASE_URL}/fapi/v1/trades?${queryString}&signature=${signature}`;
+        const url = `${binanceConfig.REST_BASE_URL}/fapi/v1/order?${queryString}&signature=${signature}`;
 
         
         const response = await axios.get(url, { headers });
@@ -30,10 +30,12 @@ async function listMarketTrades(data)
     {
         timestamp: Date.now(),
         symbol: 'BTCUSDT',
-        limit: 10,
+        orderId: 4057046666,
+        clientOrderId: '1RAc0wYGtR1JoHt3LXS7F6',
+        recvWindow: 30000,
     }
 
-    console.log(await listMarketTrades(data));
+    console.log(await queryOpenOrder(data));
 })() */
 
-module.exports = listMarketTrades;
+module.exports = queryOpenOrder;

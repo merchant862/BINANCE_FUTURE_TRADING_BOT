@@ -6,12 +6,12 @@ async function marketPriceOfACoin(data)
 {
     try 
     {
-        const url = `${binanceConfig.REST_BASE_URL}/fapi/v1/premiumIndex?
+        const url = `${binanceConfig.REST_BASE_URL}/fapi/v2/ticker/price?
         symbol=${data.symbol}`;
         
         const response = await axios.get(url);
         
-        return Number(response.data.markPrice);
+        return Number(response.data.price);
     }
 
     catch (error) 

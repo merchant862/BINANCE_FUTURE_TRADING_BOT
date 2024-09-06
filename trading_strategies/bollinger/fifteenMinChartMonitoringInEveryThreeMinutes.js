@@ -40,18 +40,21 @@ async function fifteenMinChartMonitoringInEveryThreeMinutes(data)
     
         let percentageDifference = Math.abs((marketPriceOfACoin - bollingerLowest) / bollingerLowest) * 100;
         
-        if (percentageDifference >= 0.01 && percentageDifference <= 1) 
+        if (percentageDifference >= data.minPercentageDiff && percentageDifference <= data.maxPercentageDiff) 
         {
-            await binanceConfig.setLeverage(
+            let timeStamp = Date.now();
+
+            await binanceSDK.setLeverage(
             {
                 symbol: data.symbol,
                 leverage: data.leverage,
-                timestamp: Date.now(),
+                recvWindow: data.recvWindow,
+                timestamp: timeStamp,
             });
             
-            let userBalance = await binanceConfig.getBalance();
+            let userBalance = await binanceSDK.getBalance();
             let userUSDTBalance = userBalance.find(item => item.asset === data.asset);
-    
+
             if(!userUSDTBalance.availableBalance || userUSDTBalance.availableBalance == 0 || userUSDTBalance.availableBalance == '0.00000000')
             {
                 console.log('Not enough balance!\n Re-running the bot!\n\n');
@@ -60,17 +63,17 @@ async function fifteenMinChartMonitoringInEveryThreeMinutes(data)
     
             else
             {
-                let quantitytoSpend = parseFloat(((parseFloat(userUSDTBalance.availableBalance) / 100) * 1) / parseFloat(marketPriceOfACoin)).toFixed(2);
+                let quantitytoSpend = parseFloat(((parseFloat(userUSDTBalance.availableBalance) / 100) * data.balancePercentage) / parseFloat(marketPriceOfACoin)).toFixed(2);
                 
-                let placetrade = await binanceConfig.placeTrade(
+                let placetrade = await binanceSDK.placeTrade(
                 {
                     symbol: data.symbol,
                     side: data.tradeSide, //'BUY',
                     positionSide: data.tradePosition, //'LONG',
                     type: data.orderType, //'MARKET', 
                     quantity: quantitytoSpend,
-                    //recvWindow: '20000',
-                    timestamp: Date.now(),
+                    recvWindow: data.recvWindow,
+                    timestamp: timeStamp,
                 });
     
                 console.log(placetrade);
@@ -109,6 +112,10 @@ try
             tradePosition: args.tradePosition, //'LONG',
             orderType: args.orderType, //'MARKET', 
             strategyInterval: args.strategyInterval, //180
+            balancePercentage: args.balancePercentage, //3
+            minPercentageDiff: args.minPercentageDiff, //0.01
+            maxPercentageDiff: args.maxPercentageDiff, //1.5
+            recvWindow: args.recvWindow, //10000
         }
         
         await fifteenMinChartMonitoringInEveryThreeMinutes(data);
