@@ -2,16 +2,20 @@ const axios = require('axios');
 
 const binanceConfig = require('./../config');
 
+const userAgent = require('./../../../userAgents');
+
 async function klineData(data) 
 {
     try 
     {
+        const headers = { 'User-Agent': userAgent('desktop') };
+
         const url = `${binanceConfig.REST_BASE_URL}/fapi/v1/klines?
         symbol=${data.symbol}&
         interval=${data.interval}&
         limit=${data.limit}`;
         
-        const response = await axios.get(url);
+        const response = await axios.get(url, { headers });
         
         const candles = response.data.map(candle => (
         {
@@ -34,6 +38,7 @@ async function klineData(data)
 
     catch (error) 
     {
+        console.error(error);
         throw error;
     }
 }

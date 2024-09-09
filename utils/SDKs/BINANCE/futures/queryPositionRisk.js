@@ -4,11 +4,17 @@ const createSignature    = require('./../createHMACSignature');
 const binanceConfig      = require('./../config');
 const marketPriceOfACoin = require('./../marketData/marketPriceOfACoin');
 
+const userAgent = require('./../../../userAgents');
+
 async function queryPositionRisk(data) 
 {
     try 
     {
-        const headers = { 'X-MBX-APIKEY': binanceConfig.API_KEY };
+        const headers = 
+        { 
+            'X-MBX-APIKEY': binanceConfig.API_KEY,
+            'User-Agent': userAgent('desktop'),
+        };
 
         const queryString = new URLSearchParams(data).toString();
         const signature = createSignature(binanceConfig.API_SECRET, queryString);
@@ -37,6 +43,7 @@ async function queryPositionRisk(data)
 
     catch (error) 
     {
+        console.error(error);
         throw error;
     }
 }
@@ -53,6 +60,6 @@ async function queryPositionRisk(data)
     }
 
     console.log(await queryPositionRisk(data));
-})() */
-
+})()
+ */
 module.exports = queryPositionRisk;

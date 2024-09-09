@@ -3,13 +3,17 @@ const axios = require('axios');
 const createSignature = require('./../createHMACSignature');
 const binanceConfig   = require('./../config');
 
-async function getAccountBalance() 
+const userAgent = require('./../../../userAgents');
+
+async function getAccountBalance(data) 
 {
     try 
     {
-        const data = { timestamp: Date.now() };
-
-        const headers = { 'X-MBX-APIKEY': binanceConfig.API_KEY };
+        const headers = 
+        { 
+            'X-MBX-APIKEY': binanceConfig.API_KEY,
+            'User-Agent': userAgent('desktop'),
+        };
 
         const queryString = new URLSearchParams(data).toString();
         const signature = createSignature(binanceConfig.API_SECRET, queryString);
@@ -23,13 +27,18 @@ async function getAccountBalance()
 
     catch (error) 
     {
+        console.error(error);
         throw error;
     }
 }
 
 /* (async() => 
 {
-    await getAccountBalance()
-})() */
-
+    console.log(await getAccountBalance(
+        { 
+            recvWindow: 300000,
+            timestamp: Date.now() 
+        }))
+})()
+ */
 module.exports = getAccountBalance;

@@ -15,6 +15,7 @@
     "node-schedule": "^2.1.1",
     "rand-token": "^1.0.1",
     "technicalindicators": "^3.1.0",
+    "user-agents": "^1.1.321",
     "ws": "^8.18.0"
   }
 }
