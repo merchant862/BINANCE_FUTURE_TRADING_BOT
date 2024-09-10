@@ -1,4 +1,3 @@
-const axios = require('axios');
 const WebSocket = require('ws');
 
 // Binance API credentials
@@ -20,6 +19,10 @@ async function connectWebSocket() {
         console.log('Connected to Binance WebSocket for User Data Stream');
     });
 
+    ws.on('open', () => {
+        console.log('Connected to Binance WebSocket for User Data Stream');
+    });
+
     ws.on('message', (message) => {
         const data = JSON.parse(message);
 
@@ -27,10 +30,12 @@ async function connectWebSocket() {
         if (data.e === 'ACCOUNT_UPDATE') {
             console.log('Account Update:', data);
 
-            // Extract balances
-            const balances = data.a.B;
-            balances.forEach(balance => {
-                console.log(`Asset: ${balance.a}, Balance: ${balance.wb}`);
+            // Extract positions from the update
+            const positions = data.a.P;
+            positions.forEach(position => {
+                if (position.pa != '0') { // pa is position amount
+                    console.log(`Symbol: ${position.s}, Position: ${position.pa}, Entry Price: ${position.ep}, Unrealized PnL: ${position.upnl}`);
+                }
             });
         }
     });
