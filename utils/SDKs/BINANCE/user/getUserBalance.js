@@ -1,9 +1,9 @@
 const axios = require('axios');
 
-const createSignature = require('./../createHMACSignature');
-const binanceConfig   = require('./../config');
+const createSignature = require('../createHMACSignature');
+const binanceConfig   = require('../config');
 
-const userAgent = require('./../../../userAgents');
+const userAgent = require('../../../userAgents');
 
 async function getAccountBalance(data) 
 {

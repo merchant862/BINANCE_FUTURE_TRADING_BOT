@@ -18,150 +18,168 @@ async function XMinChartMonitoringInEveryXMinutes(data)
 {
     try
     {
-        await binanceSDK.klineData(
+        let queryPosition = await binanceSDK.queryPositionRisk(
         {
+            leverage: data.leverage,
+            position: data.tradePosition,
+            timestamp: Date.now(),
             symbol: data.symbol,
-            interval: data.interval,
-            limit: data.klineLimit
-        })
-        .then(async(klineData) => 
-        {
-            let closePrices = klineData.map(candle => parseFloat(candle.close)).filter(price => !isNaN(price));
-    
-            let BB = await calculateBollingerBands(
-            {
-                prices: closePrices,
-                period: data.period,
-                stdDev: data.stdDev
-            });
-        
-            let bollingerLowest = BB.reduce((min, item) => Math.min(min, item.lower), Infinity);
-        
-            await binanceSDK.marketPriceOfACoin({ symbol: data.symbol })
-            .then(async(marketPriceOfACoin) => 
-            {
-                let percentageDifference = Math.abs((marketPriceOfACoin - bollingerLowest) / bollingerLowest) * 100;
-            
-                if (percentageDifference >= data.minPercentageDiff && percentageDifference <= data.maxPercentageDiff) 
-                {
-                    await binanceSDK.setLeverage(
-                    {
-                        symbol: data.symbol,
-                        leverage: data.leverage,
-                        recvWindow: data.recvWindow,
-                        timestamp: Date.now(),
-                    })
-                    .then(async() => 
-                    {
-                        await binanceSDK.getBalance(
-                        { 
-                            recvWindow: data.recvWindow,
-                            timestamp: Date.now() 
-                        })
-                        .then(async(userBalance) => 
-                        {
-                            let userUSDTBalance = userBalance.find(item => item.asset === data.asset);
+            recvWindow: data.recvWindow,
+        });
 
-                            if(!userUSDTBalance.availableBalance || userUSDTBalance.availableBalance == 0 || userUSDTBalance.availableBalance == '0.00000000')
+        if(queryPosition.Positions[0].positionAmt == "0.000" || queryPosition.Positions[1].positionAmt == "0.000")
+        {
+            await binanceSDK.klineData(
+            {
+                symbol: data.symbol,
+                interval: data.interval,
+                limit: data.klineLimit
+            })
+            .then(async(klineData) => 
+            {
+                let closePrices = klineData.map(candle => parseFloat(candle.close)).filter(price => !isNaN(price));
+        
+                let BB = await calculateBollingerBands(
+                {
+                    prices: closePrices,
+                    period: data.period,
+                    stdDev: data.stdDev
+                });
+            
+                let bollingerLowest = BB.reduce((min, item) => Math.min(min, item.lower), Infinity);
+            
+                await binanceSDK.marketPriceOfACoin({ symbol: data.symbol })
+                .then(async(marketPriceOfACoin) => 
+                {
+                    let percentageDifference = Math.abs((marketPriceOfACoin - bollingerLowest) / bollingerLowest) * 100;
+                
+                    if (percentageDifference >= data.minPercentageDiff && percentageDifference <= data.maxPercentageDiff) 
+                    {
+                        await binanceSDK.setLeverage(
+                        {
+                            symbol: data.symbol,
+                            leverage: data.leverage,
+                            recvWindow: data.recvWindow,
+                            timestamp: Date.now(),
+                        })
+                        .then(async() => 
+                        {
+                            await binanceSDK.getBalance(
+                            { 
+                                recvWindow: data.recvWindow,
+                                timestamp: Date.now() 
+                            })
+                            .then(async(userBalance) => 
                             {
-                                console.log('Not enough balance!\n Re-running the bot!\n\n');
-                                eventEmitter.emit('rerun', data);
-                            }
-                    
-                            else
-                            {
-                                await binanceSDK.orderBook(
+                                let userUSDTBalance = userBalance.find(item => item.asset === data.asset);
+    
+                                if(!userUSDTBalance.availableBalance || userUSDTBalance.availableBalance == 0 || userUSDTBalance.availableBalance == '0.00000000')
                                 {
-                                    symbol: data.symbol,
-                                    limit: data.orderBookValuesLimit,
-                                    minDifference: data.orderBookPriceMinimumDifference
-                                })
-                                .then(async(orderBook) => 
+                                    console.log('Not enough balance!\n Re-running the bot!\n\n');
+                                    eventEmitter.emit('rerun', data);
+                                }
+                        
+                                else
                                 {
-                                    if(orderBook.bids.length == 0 || !orderBook.bids.length)
+                                    await binanceSDK.orderBook(
                                     {
-                                        console.log('Not enough bids in the order book!\n Re-running the bot!\n\n');
-                                        eventEmitter.emit('rerun', data);
-                                    }
-    
-                                    else
+                                        symbol: data.symbol,
+                                        limit: data.orderBookValuesLimit,
+                                        minDifference: data.orderBookPriceMinimumDifference
+                                    })
+                                    .then(async(orderBook) => 
                                     {
-                                        let highestBidPrice = orderBook.bids[0].price;
-    
-                                        let priceDifferenceBetweenHighestBidPriceAndMarketPrice = Math.abs(highestBidPrice - marketPriceOfACoin);
-    
-                                        if(priceDifferenceBetweenHighestBidPriceAndMarketPrice <= data.priceDifferenceBetweenHighestBidPriceAndMarketPrice) 
+                                        if(orderBook.bids.length == 0 || !orderBook.bids.length)
                                         {
-                                            let quantitytoSpend = parseFloat(((parseFloat(userUSDTBalance.availableBalance) / 100) * data.balancePercentage) / parseFloat(marketPriceOfACoin)).toFixed(2);
-                                        
-                                            /* let placetrade =  */await binanceSDK.placeTrade(
-                                            {
-                                                symbol: data.symbol,
-                                                side: data.tradeSide,
-                                                positionSide: data.tradePosition,
-                                                type: data.orderType,
-                                                quantity: quantitytoSpend,
-                                                recvWindow: data.recvWindow,
-                                                timestamp: Date.now(),
-                                            })
-                                            .then(async(placeTrade) => 
-                                            {
-                                                console.log(placeTrade);
-                                                await monitorROIAndPnL(data,quantitytoSpend);
-                                            })
-                                            .catch((error) => 
-                                            {
-                                                console.log(`${error.message}\n Re-running the bot!\n\n`);
-                                                eventEmitter.emit('rerun', data);
-                                            });
-                                
-                                            /* return [percentageDifference, bollingerLowest, marketPriceOfACoin]; */
-                                        }
-    
-                                        else
-                                        {
-                                            console.log('Price difference too high!\n Re-running the bot!\n\n');
+                                            console.log('Not enough bids in the order book!\n Re-running the bot!\n\n');
                                             eventEmitter.emit('rerun', data);
                                         }
-                                    }
-                                })
-                                .catch((error) => 
-                                {
-                                    console.log(`${error.message}\n Re-running the bot!\n\n`);
-                                    eventEmitter.emit('rerun', data);
-                                });
-                            }
+        
+                                        else
+                                        {
+                                            let highestBidPrice = orderBook.bids[0].price;
+        
+                                            let priceDifferenceBetweenHighestBidPriceAndMarketPrice = Math.abs(highestBidPrice - marketPriceOfACoin);
+        
+                                            if(priceDifferenceBetweenHighestBidPriceAndMarketPrice <= data.priceDifferenceBetweenHighestBidPriceAndMarketPrice) 
+                                            {
+                                                let quantitytoSpend = parseFloat(((parseFloat(userUSDTBalance.availableBalance) / 100) * data.balancePercentage) / parseFloat(marketPriceOfACoin)).toFixed(3);
+                                            
+                                                /* let placetrade =  */await binanceSDK.placeTrade(
+                                                {
+                                                    symbol: data.symbol,
+                                                    side: data.tradeSide,
+                                                    positionSide: data.tradePosition,
+                                                    type: data.orderType,
+                                                    quantity: quantitytoSpend,
+                                                    recvWindow: data.recvWindow,
+                                                    timestamp: Date.now(),
+                                                })
+                                                .then(async(placeTrade) => 
+                                                {
+                                                    console.log(placeTrade);
+                                                    await monitorROIAndPnL(data,quantitytoSpend);
+                                                })
+                                                .catch((error) => 
+                                                {
+                                                    console.log(`${error.message}\n Re-running the bot!\n\n`);
+                                                    eventEmitter.emit('rerun', data);
+                                                });
+                                    
+                                                /* return [percentageDifference, bollingerLowest, marketPriceOfACoin]; */
+                                            }
+        
+                                            else
+                                            {
+                                                console.log('Price difference too high!\n Re-running the bot!\n\n');
+                                                eventEmitter.emit('rerun', data);
+                                            }
+                                        }
+                                    })
+                                    .catch((error) => 
+                                    {
+                                        console.log(`${error.message}\n Re-running the bot!\n\n`);
+                                        eventEmitter.emit('rerun', data);
+                                    });
+                                }
+                            })
+                            .catch((error) => 
+                            {
+                                console.log(`${error.message}\n Re-running the bot!\n\n`);
+                                eventEmitter.emit('rerun', data);
+                            });
                         })
                         .catch((error) => 
                         {
                             console.log(`${error.message}\n Re-running the bot!\n\n`);
                             eventEmitter.emit('rerun', data);
                         });
-                    })
-                    .catch((error) => 
+                    }
+                
+                    else 
                     {
                         console.log(`${error.message}\n Re-running the bot!\n\n`);
                         eventEmitter.emit('rerun', data);
-                    });
-                }
-            
-                else 
+                    }
+                })
+                .catch((error) => 
                 {
                     console.log(`${error.message}\n Re-running the bot!\n\n`);
                     eventEmitter.emit('rerun', data);
-                }
+                });
             })
             .catch((error) => 
             {
                 console.log(`${error.message}\n Re-running the bot!\n\n`);
                 eventEmitter.emit('rerun', data);
             });
-        })
-        .catch((error) => 
+        }
+
+        else
         {
-            console.log(`${error.message}\n Re-running the bot!\n\n`);
+            console.log(`A trade for ${data.symbol} is already placed!\n Re-running the bot!\n\n`);
             eventEmitter.emit('rerun', data);
-        });
+        }
     }
 
     catch(error)
@@ -193,7 +211,7 @@ async function monitorROIAndPnL(data, quantitytoSpend)
 
                 console.log(`Current ROI: ${roi}%`);
 
-                if (roi >= data.positiveROI || roi <= data.negativeROI / 1.5) 
+                if (roi >= data.positiveROI || roi <= data.negativeROI) 
                 {
                     await binanceSDK.placeTrade(
                     {
@@ -207,7 +225,7 @@ async function monitorROIAndPnL(data, quantitytoSpend)
                     })
                     .then(async(placeTrade) => 
                     {
-                        console.log(`${placeTrade}\n\n`);
+                        console.log(placeTrade);
                         console.log(`ROI reached ${roi}%, stopping the bot and closing the position!\n\n`);
                         stopMonitoring = true;
                         process.exit(0);
