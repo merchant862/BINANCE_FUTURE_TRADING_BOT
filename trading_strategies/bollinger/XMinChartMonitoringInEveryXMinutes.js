@@ -211,7 +211,7 @@ async function monitorROIAndPnL(data, quantitytoSpend)
 
                 console.log(`Current ROI: ${roi}%`);
 
-                if (roi >= data.positiveROI || roi <= data.negativeROI) 
+                /* if (roi >= data.positiveROI || roi <= data.negativeROI) 
                 {
                     await binanceSDK.placeTrade(
                     {
@@ -230,12 +230,12 @@ async function monitorROIAndPnL(data, quantitytoSpend)
                         stopMonitoring = true;
                         process.exit(0);
                     })
-                    /* .catch((error) => 
+                    .catch((error) => 
                     {
                         console.log(`${error.message}\n Re-running the bot!\n\n`);
                         eventEmitter.emit('rerun', data);
-                    }); */
-                } 
+                    });
+                }  */
             })
             /* .catch((error) => 
             {

@@ -19,24 +19,23 @@ async function connectWebSocket() {
         console.log('Connected to Binance WebSocket for User Data Stream');
     });
 
-    ws.on('open', () => {
-        console.log('Connected to Binance WebSocket for User Data Stream');
-    });
-
     ws.on('message', (message) => {
         const data = JSON.parse(message);
 
-        // Check for ACCOUNT_UPDATE event
         if (data.e === 'ACCOUNT_UPDATE') {
-            console.log('Account Update:', data);
+            
+            const P = data.a.P;
+            const m = data.a.m;
+            const B = data.a.B;
 
-            // Extract positions from the update
-            const positions = data.a.P;
-            positions.forEach(position => {
-                if (position.pa != '0') { // pa is position amount
+            console.log(P, m, B);
+
+            /* positions.forEach(position => {
+                if (position.pa != '0') 
+                { 
                     console.log(`Symbol: ${position.s}, Position: ${position.pa}, Entry Price: ${position.ep}, Unrealized PnL: ${position.upnl}`);
                 }
-            });
+            }); */
         }
     });
 
