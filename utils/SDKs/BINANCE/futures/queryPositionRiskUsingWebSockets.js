@@ -22,21 +22,20 @@ async function connectWebSocket() {
     ws.on('message', (message) => {
         const data = JSON.parse(message);
 
-        if (data.e === 'ACCOUNT_UPDATE') {
-            
-            const P = data.a.P;
-            const m = data.a.m;
-            const B = data.a.B;
+       
+        
 
-            console.log(P, m, B);
+            const positions = data.a.P; 
+            const activePositions = positions.filter(position => position.pa !== '0'); // Only non-zero positions
 
-            /* positions.forEach(position => {
-                if (position.pa != '0') 
-                { 
+            if (activePositions.length === 0) {
+                console.log('No open positions.');
+            } else {
+                activePositions.forEach(position => {
                     console.log(`Symbol: ${position.s}, Position: ${position.pa}, Entry Price: ${position.ep}, Unrealized PnL: ${position.upnl}`);
-                }
-            }); */
-        }
+                });
+            }
+        
     });
 
     ws.on('close', () => {

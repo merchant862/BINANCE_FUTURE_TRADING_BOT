@@ -38,7 +38,7 @@ async function queryPositionRisk(data)
 
         const roi = (pnl / initialMargin) * 100;
 
-        return { Positions: response.data, PnL: pnl, ROI: roi };
+        return { Positions: response.data, PnL: (pnl).toFixed(2), ROI: (roi).toFixed(2) };
     }
 
     catch (error) 
@@ -52,8 +52,6 @@ async function queryPositionRisk(data)
 {
     let data = 
     {
-        leverage: 20,
-        position: "LONG",
         timestamp: Date.now(),
         symbol: 'BTCUSDT',
         recvWindow: 300000,
@@ -63,12 +61,12 @@ async function queryPositionRisk(data)
 
     console.log(position)
 
-    if(position.Positions[0].positionAmt == "0.000" || position.Positions[1].positionAmt == "0.000")
+    if(position.Positions[0].positionAmt == "0.000" && position.Positions[1].positionAmt == "0.000")
     {
         console.log("no trade is going on");
     }
 
     else console.log("trade is going on")
-})()
- */
+})() */
+
 module.exports = queryPositionRisk;
